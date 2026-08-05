@@ -340,6 +340,19 @@ app.post('/api/atletas', verificarToken, async (req, res) => {
 });
 
 // ==========================================
+// ROTA: EXCLUIR UM ÚNICO ATLETA
+// ==========================================
+app.delete('/api/atletas/:id', verificarToken, async (req, res) => {
+    try {
+        await pool.execute('DELETE FROM competicao WHERE id = ?', [req.params.id]);
+        res.json({ sucesso: true, mensagem: "Atleta excluído." });
+    } catch (error) {
+        console.error("🚨 Erro ao excluir atleta:", error);
+        res.status(500).json({ erro: "Erro ao excluir atleta." });
+    }
+});
+
+// ==========================================
 // ROTA: ATUALIZAR ATLETA (PUT) - TRATAMENTO SEGURO
 // ==========================================
 app.put('/api/atletas/:id', verificarToken, async (req, res) => {
