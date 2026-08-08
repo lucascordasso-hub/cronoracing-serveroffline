@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tela do Atleta - EF Software</title>
+    <style>
+        :root {
+            --cor-fundo: #0d0e12;
+            --cor-neon: #00ffcc;
+            --cor-texto: #ffffff;
+            --cor-borda: #262936;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            background-image: url('https://images.unsplash.com/photo-1552674605-db6ffd4facb5?q=80&w=2070&auto=format&fit=crop');
+            background-size: cover;          
+            background-position: center;     
+            background-attachment: fixed;    
+            background-color: var(--cor-fundo);
+            color: var(--cor-texto);
+            margin: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh; /* Trava na altura exata da tela */
+            overflow: hidden; /* Corta qualquer rolagem acidental */
+        }
+
+        .container-espelho {
+            width: 95%;
+            max-width: 1000px;
+            background-color: rgba(22, 24, 31, 0.95);
+            padding: 25px 40px; /* Reduzido o espaço interno vertical */
+            border-radius: 20px;
+            border: 2px solid var(--cor-neon);
+            box-shadow: 0 0 40px rgba(0, 255, 204, 0.3);
+            text-align: center;
+        }
+
+        #tela-espera {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--cor-texto);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        #tela-dados { display: none; }
+
+        .titulo-verificacao {
+            font-size: 22px; /* Fonte ligeiramente menor */
+            color: var(--cor-neon);
+            margin-bottom: 15px; /* Menos espaço abaixo do título */
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* --- NÚMERO DE PEITO (AJUSTADO PARA NÃO ROLAR) --- */
+        .numero-peito-box {
+            position: relative;
+            background-color: #f4f4f9; 
+            color: #000000;
+            text-align: center;
+            margin: 0 auto 20px auto; /* Reduzido o espaço abaixo do número */
+            width: 100%;
+            max-width: 380px; /* Largura um pouco menor */
+            border-radius: 8px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.8);
+            overflow: hidden; 
+        }
+
+        .numero-peito-header {
+            background-color: #ff3b30; color: white; font-weight: 900; font-size: 18px;
+            padding: 10px 0; text-transform: uppercase; letter-spacing: 3px;
+            border-bottom: 3px solid #c92a22;
+        }
+
+        .numero-peito-valor {
+            font-size: 100px; /* Letra grande, mas sem exagerar na altura */
+            font-weight: 900; line-height: 1; padding: 15px 0; /* Padding interno menor */
+            font-family: 'Arial Black', Impact, sans-serif; letter-spacing: -3px;
+        }
+
+        .numero-peito-footer {
+            background-color: #e0e0e0; color: #333; font-size: 20px; padding: 8px 10px;
+            font-weight: bold; text-transform: uppercase; white-space: nowrap;
+            overflow: hidden; text-overflow: ellipsis; 
+        }
+
+        .furo {
+            position: absolute; width: 16px; height: 16px;
+            background-color: rgba(22, 24, 31, 0.95); 
+            border-radius: 50%; box-shadow: inset 0 3px 6px rgba(0,0,0,0.8); z-index: 10;
+        }
+        .furo.top-left { top: 12px; left: 12px; }
+        .furo.top-right { top: 12px; right: 12px; }
+        .furo.bottom-left { bottom: 12px; left: 12px; }
+        .furo.bottom-right { bottom: 12px; right: 12px; }
+
+        /* --- GRID DE INFORMAÇÕES COMPACTADO --- */
+        .grid-infos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px; /* Caixas mais próximas umas das outras */
+            text-align: left;
+        }
+
+        .info-box {
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 15px; /* Reduzido o espaço interno das caixinhas */
+            border-radius: 8px;
+            border-left: 5px solid var(--cor-neon);
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: #aaaaaa;
+            text-transform: uppercase;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .info-valor {
+            font-size: 20px; /* Texto dos dados ligeiramente ajustado */
+            font-weight: bold;
+            color: white;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .destaque-camisa { color: #ff9900; }
+        .destaque-prova { color: #00ffcc; }
+    </style>
+</head>
+<body>
+
+    <div class="container-espelho">
+        
+        <div id="tela-espera">
+            Bem-vindo!<br>
+            <span style="font-size: 20px; color: var(--cor-neon); font-weight: normal; margin-top: 15px; display: block;">
+                Aguardando o próximo atleta...
+            </span>
+        </div>
+
+        <div id="tela-dados">
+            <div class="titulo-verificacao">Por favor, verifique seus dados:</div>
+            
+            <div class="numero-peito-box">
+                <div class="furo top-left"></div>
+                <div class="furo top-right"></div>
+                <div class="furo bottom-left"></div>
+                <div class="furo bottom-right"></div>
+                
+                <div class="numero-peito-header">CRONORACING</div>
+                <div class="numero-peito-valor" id="espelho-numero">000</div>
+                <div class="numero-peito-footer" id="espelho-nome-peito">NOME DO ATLETA</div>
+            </div>
+
+            <div class="grid-infos">
+                <div class="info-box">
+                    <span class="info-label">Atleta</span>
+                    <span class="info-valor" id="espelho-nome">NOME DO ATLETA</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">CPF</span>
+                    <span class="info-valor" id="espelho-cpf">000.000.000-00</span>
+                </div>
+
+                <!-- === NOVOS CAMPOS AQUI === -->
+                <div class="info-box">
+                    <span class="info-label">Modalidade</span>
+                    <span class="info-valor destaque-prova" id="espelho-modalidade">---</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Categoria</span>
+                    <span class="info-valor destaque-prova" id="espelho-categoria">---</span>
+                </div>
+                <!-- ========================= -->
+
+                <div class="info-box">
+                    <span class="info-label">Nascimento</span>
+                    <span class="info-valor" id="espelho-nascimento">00/00/0000</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Sexo</span>
+                    <span class="info-valor" id="espelho-sexo">---</span>
+                </div>
+
+                <div class="info-box">
+                    <span class="info-label">E-mail</span>
+                    <span class="info-valor" id="espelho-email">email@exemplo.com</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Telefone</span>
+                    <span class="info-valor" id="espelho-telefone">(00) 00000-0000</span>
+                </div>
+
+                <div class="info-box">
+                    <span class="info-label">Equipe</span>
+                    <span class="info-valor" id="espelho-equipe">NOME DA EQUIPE</span>
+                </div>
+                <div class="info-box">
+                    <span class="info-label">Camiseta</span>
+                    <span class="info-valor destaque-camisa" id="espelho-camisa">TAMANHO</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function atualizarEspelho() {
+            const dadosSalvos = localStorage.getItem('atleta_espelho');
+            
+            if (dadosSalvos) {
+                const atleta = JSON.parse(dadosSalvos);
+                
+                document.getElementById('espelho-numero').innerText = atleta.numero_peito || "S/N";
+                document.getElementById('espelho-nome-peito').innerText = atleta.nome || "ATLETA";
+                
+                document.getElementById('espelho-nome').innerText = atleta.nome || "---";
+                document.getElementById('espelho-cpf').innerText = atleta.cpf || "---";
+                
+                // Puxando a onda e a categoria do banco de dados local
+                document.getElementById('espelho-modalidade').innerText = atleta.nome_onda || "---";
+                document.getElementById('espelho-categoria').innerText = atleta.nome_categoria || "---";
+
+                document.getElementById('espelho-nascimento').innerText = atleta.nascimento || "---";
+                document.getElementById('espelho-sexo').innerText = atleta.sexo || "---";
+                document.getElementById('espelho-email').innerText = atleta.email || "---";
+                document.getElementById('espelho-telefone').innerText = atleta.telefone || "---";
+                document.getElementById('espelho-equipe').innerText = atleta.equipe || "---";
+                document.getElementById('espelho-camisa').innerText = (atleta.tamanho_camiseta || "---") + " (" + (atleta.nome_camiseta || "") + ")";
+                
+                document.getElementById('tela-espera').style.display = 'none';
+                document.getElementById('tela-dados').style.display = 'block';
+            } else {
+                document.getElementById('tela-dados').style.display = 'none';
+                document.getElementById('tela-espera').style.display = 'block';
+            }
+        }
+
+        window.addEventListener('storage', function(evento) {
+            if (evento.key === 'atleta_espelho') {
+                atualizarEspelho();
+            }
+        });
+
+        atualizarEspelho();
+    </script>
+</body>
+</html>
