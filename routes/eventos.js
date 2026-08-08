@@ -13,9 +13,17 @@ router.get('/eventos', verificarToken, async (req, res) => {
         const eventosFormatados = linhas.map(ev => {
             let dataFormatada = ev.dataInicio ? new Date(ev.dataInicio).toISOString().split('T')[0] : "";
             return {
-                id: ev.id.toString(), nome: ev.descricao, data: dataFormatada,
-                horario: ev.horario, cidade: ev.cidade, estado: ev.estado,
-                local: ev.local, tipo: ev.tipo, responsavel: ev.respCrono, diretor: ev.diretor,
+                id: ev.id.toString(), 
+                nome: ev.descricao, 
+                data: dataFormatada,
+                horario: ev.horario, 
+                cidade: ev.cidade, 
+                estado: ev.estado,
+                local: ev.local, 
+                tipo_evento: ev.tipo_evento, 
+                prefixo_tag: ev.prefixo_tag, 
+                responsavel: ev.respCrono, 
+                diretor: ev.diretor,
                 acesso: { dono: req.usuario.is_dono === 1, permissoes: req.usuario.permissoes }
             };
         });
@@ -30,9 +38,9 @@ router.post('/eventos', verificarToken, async (req, res) => {
         await conn.beginTransaction();
 
         const [resultEv] = await conn.execute(
-            `INSERT INTO eventos (descricao, local, respCrono, diretor, dataInicio, horario, cidade, estado, tipo) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [ev.descricao, ev.local, ev.respCrono || null, ev.diretor || null, ev.dataInicio, ev.horario || null, ev.cidade, ev.estado, ev.tipo]
+            `INSERT INTO eventos (descricao, local, respCrono, diretor, dataInicio, horario, cidade, estado, tipo_evento, prefixo_tag) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [ev.descricao, ev.local, ev.respCrono || null, ev.diretor || null, ev.dataInicio, ev.horario || null, ev.cidade, ev.estado, ev.tipo_evento || null, ev.prefixo_tag || null]
         );
         
         const novoIdEvento = resultEv.insertId;
@@ -43,18 +51,24 @@ router.post('/eventos', verificarToken, async (req, res) => {
         conn.release();
 
         res.status(201).json({ mensagem: "Evento criado", id: novoIdEvento });
-    } catch (error) { res.status(500).json({ erro: "Erro ao salvar evento" }); }
+    } catch (error) { 
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao salvar evento" }); 
+    }
 });
 
 router.put('/eventos/:id', verificarToken, async (req, res) => {
     const ev = req.body;
     try {
         await pool.execute(
-            `UPDATE eventos SET descricao = ?, local = ?, respCrono = ?, diretor = ?, dataInicio = ?, horario = ?, cidade = ?, estado = ?, tipo = ? WHERE id = ?`,
-            [ev.descricao, ev.local, ev.respCrono || null, ev.diretor || null, ev.dataInicio, ev.horario || null, ev.cidade, ev.estado, ev.tipo, req.params.id]
+            `UPDATE eventos SET descricao = ?, local = ?, respCrono = ?, diretor = ?, dataInicio = ?, horario = ?, cidade = ?, estado = ?, tipo_evento = ?, prefixo_tag = ? WHERE id = ?`,
+            [ev.descricao, ev.local, ev.respCrono || null, ev.diretor || null, ev.dataInicio, ev.horario || null, ev.cidade, ev.estado, ev.tipo_evento || null, ev.prefixo_tag || null, req.params.id]
         );
         res.json({ sucesso: true });
-    } catch (error) { res.status(500).json({ erro: "Erro ao atualizar evento" }); }
+    } catch (error) { 
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao atualizar evento" }); 
+    }
 });
 
 router.delete('/eventos/:id', verificarToken, async (req, res) => {
@@ -64,6 +78,7 @@ router.delete('/eventos/:id', verificarToken, async (req, res) => {
     } catch (error) { res.status(500).json({ erro: "Erro ao excluir evento" }); }
 });
 
+
 // ==========================================
 // ONDAS
 // ==========================================
@@ -71,8 +86,16 @@ router.get('/ondas/:idEvento', verificarToken, async (req, res) => {
     try {
         const [linhas] = await pool.execute('SELECT * FROM ondas WHERE evento_id = ?', [req.params.idEvento]);
         const ondas = linhas.map(o => ({
-            id: o.id.toString(), id_corrida: o.evento_id, descricao: o.descricao,
-            tmv: o.tmp, tml: o.tml, voltas: o.voltas, distancia: o.metragem
+            id: o.id.toString(), 
+            id_corrida: o.evento_id, 
+            descricao: o.descricao,
+            tmv: o.tmp, 
+            tml: o.tml, 
+            voltas: o.voltas, 
+            distancia: o.metragem,
+            qtdePodioGeral: o.qtdePodioGeral,
+            qtdePodioCat: o.qtdePodioCat,
+            semClassificacao: o.semClassificacao === 1
         }));
         res.json(ondas);
     } catch (error) { res.status(500).json({ erro: "Erro ao buscar ondas" }); }
@@ -82,22 +105,28 @@ router.post('/ondas', verificarToken, async (req, res) => {
     const o = req.body;
     try {
         const [result] = await pool.execute(
-            'INSERT INTO ondas (evento_id, descricao, tmp, tml, voltas, metragem) VALUES (?, ?, ?, ?, ?, ?)',
-            [o.id_corrida, o.descricao, o.tmv, o.tml, o.voltas, o.distancia]
+            'INSERT INTO ondas (evento_id, descricao, tmp, tml, voltas, metragem, qtdePodioGeral, qtdePodioCat, semClassificacao) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            [o.id_corrida, o.descricao, o.tmv, o.tml, o.voltas, o.distancia, o.qtdePodioGeral || 5, o.qtdePodioCat || 3, o.semClassificacao]
         );
         res.status(201).json({ id: result.insertId, mensagem: "Onda criada" });
-    } catch (error) { res.status(500).json({ erro: "Erro ao criar onda" }); }
+    } catch (error) { 
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao criar onda" }); 
+    }
 });
 
 router.put('/ondas/:id', verificarToken, async (req, res) => {
     const o = req.body;
     try {
         await pool.execute(
-            'UPDATE ondas SET descricao=?, tmp=?, tml=?, voltas=?, metragem=? WHERE id=?',
-            [o.descricao, o.tmv, o.tml, o.voltas, o.distancia, req.params.id]
+            'UPDATE ondas SET descricao=?, tmp=?, tml=?, voltas=?, metragem=?, qtdePodioGeral=?, qtdePodioCat=?, semClassificacao=? WHERE id=?',
+            [o.descricao, o.tmv, o.tml, o.voltas, o.distancia, o.qtdePodioGeral || 5, o.qtdePodioCat || 3, o.semClassificacao, req.params.id]
         );
         res.json({ sucesso: true });
-    } catch (error) { res.status(500).json({ erro: "Erro ao atualizar onda." }); }
+    } catch (error) { 
+        console.error(error);
+        res.status(500).json({ erro: "Erro ao atualizar onda." }); 
+    }
 });
 
 router.delete('/ondas/:id', verificarToken, async (req, res) => {

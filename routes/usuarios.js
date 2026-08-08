@@ -6,12 +6,36 @@ const jwt = require('jsonwebtoken');
 const pool = require('../config/database');
 const verificarToken = require('../middlewares/auth');
 
+const SECRET = process.env.JWT_SECRET || 'senha_super_secreta_padrao_12345';
+
 // ROTA DE LOGIN
 router.post('/login', async (req, res) => {
     const { email, senha } = req.body;
     if (!email || !senha) return res.status(400).json({ erro: "E-mail e senha são obrigatórios." });
 
     try {
+        // 1. Verifica quantos usuários existem no banco
+        const [totalUsuarios] = await pool.execute('SELECT COUNT(*) as count FROM usuarios');
+        
+        // 2. BOOTSTRAP (Auto-Criação Mestre): Se a tabela estiver zerada, cria esse usuário como Dono Supremo.
+        if (totalUsuarios[0].count === 0) {
+            console.log("🛠️ Banco vazio detectado! Criando Usuário Mestre (Bootstrap)...");
+            const senhaHash = await bcrypt.hash(senha, 10);
+            
+            // Permissões máximas para o Mestre
+            const permissoesMestre = JSON.stringify({ 
+                configuracoes: true, cadastrar_usuarios: true, mudar_evento: true, 
+                cadastrar_evento: true, entrega_kits: true, importacao_csv: true, 
+                inscricoes: true, transferencia: true, relatorios: true, apagar_base: true 
+            });
+
+            await pool.execute(
+                'INSERT INTO usuarios (email, senha_hash, nome, is_dono, permissoes) VALUES (?, ?, ?, ?, ?)',
+                [email, senhaHash, 'Administrador Mestre', 1, permissoesMestre]
+            );
+        }
+
+        // 3. Lógica normal de Login
         const [linhas] = await pool.execute('SELECT * FROM usuarios WHERE email = ?', [email]);
         const usuario = linhas[0];
 
@@ -20,9 +44,10 @@ router.post('/login', async (req, res) => {
         const senhaValida = await bcrypt.compare(senha, usuario.senha_hash);
         if (!senhaValida) return res.status(401).json({ erro: "Usuário não encontrado ou senha inválida." });
 
+        // Gera o token JWT
         const token = jwt.sign(
             { id: usuario.id, email: usuario.email, nome: usuario.nome, is_dono: usuario.is_dono },
-            process.env.JWT_SECRET,
+            SECRET,
             { expiresIn: '12h' }
         );
 
@@ -65,7 +90,7 @@ router.get('/usuarios', verificarToken, async (req, res) => {
 
 router.post('/usuarios', verificarToken, async (req, res) => {
     try {
-        const senhaHash = await bcrypt.hash('123456', 10);
+        const senhaHash = await bcrypt.hash('123456', 10); // Senha padrão '123456'
         await pool.execute(
             'INSERT INTO usuarios (email, senha_hash, nome, permissoes) VALUES (?, ?, ?, ?)',
             [req.body.email_usuario, senhaHash, 'Novo Usuário', JSON.stringify(req.body.permissoes)]
