@@ -595,9 +595,15 @@
 
                             <!-- Resto (Competitivo, Equipe) -->
                             <div class="campo-dados" style="margin-bottom: 0;"><label>Equipe</label><input type="text" id="transf-equipe" style="margin:0;"></div>
-                            <div class="campo-dados" style="display: flex; align-items: flex-end; margin-bottom: 0;">
-                                <input type="checkbox" id="transf-competitivo" style="margin: 0 10px 10px 0; width: 20px; height: 20px;">
-                                <label style="margin: 0 0 12px 0; font-size: 15px; cursor: pointer;">Atleta Competitivo?</label>
+                            <div class="campo-dados" style="display: flex; align-items: flex-end; margin-bottom: 0; gap: 20px;">
+                                <div style="display: flex; align-items: center;">
+                                    <input type="checkbox" id="transf-competitivo" style="margin: 0 10px 0 0; width: 20px; height: 20px;">
+                                    <label style="margin: 0; font-size: 15px; cursor: pointer;">Competitivo?</label>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    <input type="checkbox" id="transf-retirou-kit" style="margin: 0 10px 0 0; width: 20px; height: 20px;">
+                                    <label style="margin: 0; font-size: 15px; cursor: pointer; color: #ff9900; font-weight: bold;">Já Retirou o Kit?</label>
+                                </div>
                             </div>
 
                             <!-- O NOVO MOTOR DE KITS -->
@@ -1047,9 +1053,15 @@
 
                             <!-- DADOS DA CORRIDA E KIT -->
                             <div class="campo-dados" style="margin-bottom: 0;"><label>Equipe / Assessoria</label><input type="text" id="ins-equipe" style="margin:0;"></div>
-                            <div class="campo-dados" style="display: flex; align-items: flex-end; margin-bottom: 0;">
-                                <input type="checkbox" id="ins-competitivo" checked style="margin: 0 10px 10px 0; width: 20px; height: 20px;">
-                                <label style="margin: 0 0 12px 0; font-size: 15px; cursor: pointer;">Atleta Competitivo?</label>
+                            <div class="campo-dados" style="display: flex; align-items: flex-end; margin-bottom: 0; gap: 20px;">
+                                <div style="display: flex; align-items: center;">
+                                    <input type="checkbox" id="ins-competitivo" checked style="margin: 0 10px 0 0; width: 20px; height: 20px;">
+                                    <label style="margin: 0; font-size: 15px; cursor: pointer;">Competitivo?</label>
+                                </div>
+                                <div style="display: flex; align-items: center;">
+                                    <input type="checkbox" id="ins-retirou-kit" style="margin: 0 10px 0 0; width: 20px; height: 20px;">
+                                    <label style="margin: 0; font-size: 15px; cursor: pointer; color: #ff9900; font-weight: bold;">Já Retirou o Kit?</label>
+                                </div>
                             </div>
                             
                             <!-- O NOVO MOTOR DE KITS -->
@@ -2784,6 +2796,7 @@
             document.getElementById('ins-nome-cam').value = atleta.nome_camiseta || "";
             document.getElementById('ins-tag').value = atleta.numero_tag || "";
             document.getElementById('ins-competitivo').checked = atleta.competitivo;
+            document.getElementById('ins-retirou-kit').checked = atleta.retirou_kit === true || atleta.retirou_kit === 1;
             
             // Marca o Kit e dispara a inteligência da Camiseta
             comboKit.value = atleta.kit_id || "";
@@ -2852,7 +2865,8 @@
                 nome_camiseta: document.getElementById('ins-nome-cam').value || null,
                 tamanho_camiseta: tamCamisetaFinal,
                 kit_id: document.getElementById('ins-kit').value || null,
-                competitivo: document.getElementById('ins-competitivo').checked
+                competitivo: document.getElementById('ins-competitivo').checked,
+                retirou_kit: document.getElementById('ins-retirou-kit').checked
             };
 
             const acao = idAtletaEdicaoInscricao ? "ALTERAR" : "CADASTRAR";
@@ -2878,7 +2892,6 @@
                     if (index !== -1) listaAtletas[index] = { ...listaAtletas[index], ...dadosAtleta };
                 } else {
                     dadosAtleta.id = respostaServidor.id.toString();
-                    dadosAtleta.retirou_kit = false;
                     listaAtletas.push(dadosAtleta);
                 }
 
@@ -2906,7 +2919,8 @@
             { id: 'estado', label: 'Estado (UF)' }, 
             { id: 'kit_nome', label: 'Nome do Kit Adquirido' },
             { id: 'tamanho_camiseta', label: 'Tamanho Camiseta' },
-            { id: 'competitivo', label: 'Competitivo (Sim/Não)' }
+            { id: 'competitivo', label: 'Competitivo (Sim/Não)' },
+            { id: 'retirou_kit', label: 'Retirou Kit (Sim/Não)' }
         ];
 
         let dadosBrutosCSV = [];
@@ -3173,6 +3187,13 @@
                 } else {
                     atleta.competitivo = false;
                 }
+                // Tratamento do Retirou Kit (Sim, S, True ou 1)
+                if (atleta.retirou_kit) {
+                    let textoKit = atleta.retirou_kit.toString().toLowerCase().trim();
+                    atleta.retirou_kit = (textoKit === 'sim' || textoKit === 's' || textoKit === 'true' || textoKit === '1');
+                } else {
+                    atleta.retirou_kit = false; // Se a pessoa não mapeou a coluna, assume como Falso
+                }
 
                 // ==========================================
                 // INTELIGÊNCIA: CRUZAR KIT E CAMISETA
@@ -3191,10 +3212,11 @@
                         const tamTxt = atleta.tamanho_camiseta.toUpperCase().trim();
                         const tamAchado = catTamanhos.find(t => t.descricao.toUpperCase().includes(tamTxt) || tamTxt.includes(t.descricao.toUpperCase()));
                         
+                        // SE ACHAR O TAMANHO, COLOCA ELE. SE NÃO ACHAR, DEIXA EM BRANCO (NULL) SILENCIOSAMENTE!
                         if (tamAchado) {
                             atleta.tamanho_camiseta = tamAchado.descricao;
                         } else {
-                            erros.push({ linha: numeroLinhaReal, nome: nomeAtletaInfo, motivo: `Tamanho '${atleta.tamanho_camiseta}' não existe no catálogo global.` }); continue;
+                            atleta.tamanho_camiseta = null; 
                         }
                     } else {
                         atleta.tamanho_camiseta = null; // Se o kit não dá camisa, ignora o que veio no Excel
@@ -3234,7 +3256,13 @@
                     const aBanco = listaAtletas.find(a => a.cpf && String(a.cpf).trim() === cpfCSV);
                     if (aBanco) {
                         idExistente = aBanco.id;
-                        atleta.retirou_kit = aBanco.retirou_kit;
+                        
+                        // REGRA INTELIGENTE: 
+                        // Se o usuário não mapeou a coluna no CSV, mantém o status que estava no Banco.
+                        // Se ele mapeou, o CSV manda (Mesmo que seja pra remover o kit).
+                        if (mapColunas['retirou_kit'] === -1) {
+                            atleta.retirou_kit = aBanco.retirou_kit;
+                        }
                     }
                 }
 
@@ -3291,7 +3319,11 @@
                     body: JSON.stringify({ atletas: registrosValidos })
                 });
 
-                if (!resposta.ok) throw new Error("Falha ao enviar lote para o servidor MySQL.");
+                // NOVO TRATAMENTO DE ERRO (Mostra o motivo exato)
+                if (!resposta.ok) {
+                    const errorData = await resposta.json();
+                    throw new Error(errorData.erro || "Falha desconhecida no servidor MySQL.");
+                }
                 const retorno = await resposta.json();
 
                 // Atualiza a Memória Visual Global
@@ -4315,6 +4347,7 @@
                     
                     // O erro estava aqui! A linha de brinde foi apagada
                     document.getElementById('transf-competitivo').checked = atleta.competitivo === true || atleta.competitivo === "sim" || atleta.competitivo === 1;
+                    document.getElementById('transf-retirou-kit').checked = atleta.retirou_kit === true || atleta.retirou_kit === 1;
 
                     document.getElementById('area-form-transferencia').style.display = 'block';
                 };
@@ -4367,7 +4400,8 @@
                 kit_id: document.getElementById('transf-kit').value || null,
                 tamanho_camiseta: tamCamisetaFinal,
                 nome_camiseta: document.getElementById('transf-nome-cam').value || null,
-                competitivo: document.getElementById('transf-competitivo').checked
+                competitivo: document.getElementById('transf-competitivo').checked,
+                retirou_kit: document.getElementById('transf-retirou-kit').checked
             };
 
             if (!confirm("Deseja realmente salvar a transferência deste atleta?\n(O Número de Peito e TAG permanecerão os mesmos)")) return;
