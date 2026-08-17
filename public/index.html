@@ -444,7 +444,7 @@
                     Tela (Próximo)</button>
             </div>
 
-            <input type="text" id="campo-busca" placeholder="Comece a digitar o Nome ou CPF...">
+            <input type="text" id="campo-busca" placeholder="Comece a digitar o Número, Nome ou CPF...">
             <div id="resultados" class="lista-resultados"></div>
 
             <div id="ficha-atleta" style="display: none; margin-top: 30px;">
@@ -2431,13 +2431,15 @@
 
             const filtrados = listaAtletas.filter(atleta =>
                 (atleta.nome && atleta.nome.toLowerCase().includes(textoDigitado)) ||
-                (atleta.cpf && atleta.cpf.includes(textoDigitado))
+                (atleta.cpf && atleta.cpf.includes(textoDigitado)) ||
+                (atleta.numero_peito && atleta.numero_peito.toString().includes(textoDigitado))
             );
 
             filtrados.forEach(atleta => {
                 const item = document.createElement('div');
                 item.className = 'item-atleta';
-                item.innerText = `${atleta.nome} (CPF: ${atleta.cpf || 'Não informado'})`;
+                const numeroExibicao = atleta.numero_peito ? `#${atleta.numero_peito} - ` : '';
+                item.innerText = `${numeroExibicao}${atleta.nome} (CPF: ${atleta.cpf || 'Não informado'})`;
 
                 item.onclick = () => {
                     localStorage.setItem('atleta_espelho', JSON.stringify(atleta));
